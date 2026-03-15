@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>In Phiếu Quyết Toán</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .invoice-container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: #fff;
+            padding: 40px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header-title {
+            color: #10b981;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .invoice-number {
+            font-size: 1.2rem;
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .table th {
+            background-color: #f1f5f9 !important;
+        }
+        .total-amount {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #198754;
+        }
+        @media print {
+            body { background: #fff; }
+            .invoice-container { margin: 0; padding: 20px; box-shadow: none; border: none; max-width: 100%; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container pb-5">
+    
+    <div class="text-center mt-4 no-print">
+        <button onclick="window.print()" class="btn btn-primary btn-lg shadow"><i class="bi bi-printer-fill me-2"></i> IN PHIẾU NÀY</button>
+        <button onclick="window.close()" class="btn btn-secondary btn-lg shadow ms-2"><i class="bi bi-x-circle me-1"></i> ĐÓNG</button>
+    </div>
+
+    <div class="invoice-container border rounded">
+        <!-- Header -->
+        <div class="row border-bottom pb-4 mb-4">
+            <div class="col-8">
+                <h3 class="header-title mb-1"><i class="bi bi-tree-fill me-2"></i>AgriContract</h3>
+                <p class="text-muted mb-0">Địa chỉ: Khu Nông Nghiệp Công Nghệ Cao, Việt Nam</p>
+                <p class="text-muted mb-0">Hotline: 1900 1234</p>
+            </div>
+            <div class="col-4 text-end">
+                <h2 class="text-uppercase fw-bold text-secondary mb-1">Phiếu Quyết Toán</h2>
+                <p class="invoice-number mb-0">Mã: QT-<%= String(settlement.id).padStart(4, '0') %></p>
+                <p class="mb-0 text-muted">Ngày lập: <%= new Date(settlement.settlement_date).toLocaleDateString('vi-VN') %></p>
+            </div>
+        </div>
+
+        <!-- Info -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h5 class="fw-bold text-dark border-bottom pb-2">Thông Tin Nông Dân (Đại diện)</h5>
+                <div class="row mt-2">
+                    <div class="col-6">
+                        <p class="mb-1"><strong>Họ và Tên:</strong> <%= settlement.full_name %></p>
+                        <p class="mb-1"><strong>Số Điện Thoại:</strong> <%= settlement.phone || 'Chưa cung cấp' %></p>
+                    </div>
+                    <div class="col-6">
+                        <p class="mb-1"><strong>Địa Chỉ:</strong> <%= settlement.address %></p>
+                        <p class="mb-1"><strong>Khu Vực:</strong> <%= settlement.village %>, <%= settlement.commune %></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details -->
+        <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">Chi Tiết Nông Sản Nhập Kho</h5>
+        <table class="table table-bordered mb-4">
+            <thead>
+                <tr>
+                    <th class="text-center" style="width: 5%">STT</th>
+                    <th style="width: 35%">Sản Phẩm</th>
+                    <th class="text-end" style="width: 20%">Sản Lượng (kg)</th>
+                    <th class="text-end" style="width: 20%">Đơn Giá (VNĐ)</th>
+                    <th class="text-end" style="width: 20%">Thành Tiền (VNĐ)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-center">1</td>
+                    <td><strong><%= settlement.product_type %></strong></td>
+                    <td class="text-end"><%= settlement.quantity.toLocaleString() %></td>
+                    <td class="text-end"><%= settlement.unit_purchase_price.toLocaleString() %></td>
+                    <td class="text-end fw-bold"><%= settlement.total_purchase_amount.toLocaleString() %></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Summary -->
+        <div class="row mt-4">
+            <div class="col-7">
+                <p class="text-muted fst-italic mt-4">* Ghi chú: Số liệu nợ vật tư đã được khấu trừ tự động dựa trên biên bản thỏa thuận cung cấp vào đầu vụ sản xuất.</p>
+            </div>
+            <div class="col-5">
+                <table class="table table-borderless table-sm">
+                    <tr>
+                        <td class="text-end border-bottom pb-2">Tổng Tiền Nông Sản:</td>
+                        <td class="text-end border-bottom pb-2 fw-bold"><%= settlement.total_purchase_amount.toLocaleString() %></td>
+                    </tr>
+                    <tr>
+                        <td class="text-end border-bottom pb-2 text-danger">Đã Cấn Trừ Nợ Vật Tư:</td>
+                        <td class="text-end border-bottom pb-2 text-danger fw-bold">-<%= settlement.total_debt_deducted.toLocaleString() %></td>
+                    </tr>
+                    <tr>
+                        <td class="text-end pt-3 fs-5"><strong>Nông Dân Thực Nhận:</strong></td>
+                        <td class="text-end pt-3 total-amount"><%= settlement.final_payout.toLocaleString() %></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Signatures -->
+        <div class="row text-center mt-5 pt-3">
+            <div class="col-4">
+                <p class="fw-bold mb-5 pb-4">Đại Diện Hộ Nông Dân</p>
+                <p class="text-muted">(Ký và ghi rõ họ tên)</p>
+            </div>
+            <div class="col-4">
+                <p class="fw-bold mb-5 pb-4">Thủ Kho / Cân Thu</p>
+                <p class="text-muted">(Ký và ghi rõ họ tên)</p>
+            </div>
+            <div class="col-4">
+                <p class="fw-bold mb-5 pb-4">Kế Toán / Giám Đốc</p>
+                <p class="text-muted">(Ký và đóng dấu)</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Tự động in khi vừa mở xong, cmt lại nếu không muốn auto in
+    // window.onload = function() { window.print(); }
+</script>
+</body>
+</html>

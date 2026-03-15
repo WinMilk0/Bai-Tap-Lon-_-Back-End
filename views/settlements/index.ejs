@@ -1,0 +1,310 @@
+<%- include('../partials/header') %>
+
+<div class="wrapper">
+    <!-- Sidebar -->
+    <nav id="sidebar">
+        <div class="sidebar-header d-flex align-items-center justify-content-center">
+            <h4 class="mb-0 fw-bold"><i class="bi bi-tree-fill me-2" style="color: #10b981;"></i>AgriContract</h4>
+        </div>
+        <ul class="list-unstyled components mt-3">
+            <p class="text-muted small text-uppercase mb-2 px-4 fw-bold">Quản lý tổng quan</p>
+            <li>
+                <a href="/"><i class="bi bi-speedometer2 me-3 fs-5"></i> Dashboard</a>
+            </li>
+            <p class="text-muted small text-uppercase mt-4 mb-2 px-4 fw-bold">Nghiệp vụ</p>
+            <li>
+                <a href="/farmers"><i class="bi bi-people me-3 fs-5"></i> Hộ nông dân</a>
+            </li>
+            <li>
+                <a href="/advances"><i class="bi bi-box-seam me-3 fs-5"></i> Cấp phát vật tư</a>
+            </li>
+            <li class="active">
+                <a href="/settlements"><i class="bi bi-calculator me-3 fs-5"></i> Quyết toán mùa vụ</a>
+            </li>
+            <p class="text-muted small text-uppercase mt-4 mb-2 px-4 fw-bold">Tài khoản</p>
+            <li>
+                <a href="/auth/logout" class="text-danger"><i class="bi bi-box-arrow-right me-3 fs-5"></i> Đăng xuất</a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Page Content -->
+    <div id="content" class="bg-light">
+        <nav class="navbar navbar-expand-lg navbar-custom mb-4">
+            <div class="container-fluid">
+                <span class="navbar-brand mb-0 h5 fw-bold text-dark">Quyết Toán Mùa Vụ</span>
+                <div class="d-flex align-items-center ms-auto">
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="https://ui-avatars.com/api/?name=<%= user.full_name || user.username %>&background=10b981&color=fff&bold=true" alt="User" width="36" height="36" class="rounded-circle me-2 shadow-sm">
+                            <strong class="d-none d-md-block"><%= user.full_name || user.username %></strong>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="dropdownUser">
+                            <li><a class="dropdown-item text-danger py-2" href="/auth/logout"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <% if(success_msg && success_msg.length > 0) { %>
+            <div class="alert alert-success alert-dismissible fade show shadow-sm border-0">
+                <i class="bi bi-check-circle-fill me-2"></i> <%= success_msg %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <% } %>
+        <% if(error_msg && error_msg.length > 0) { %>
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> <%= error_msg %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <% } %>
+
+        <div class="card shadow-sm border-0 rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-cash-coin me-2 text-primary"></i>Lịch sử Quyết Toán Mùa Vụ</h6>
+                <button class="btn btn-primary shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#addSettlementModal">
+                    <i class="bi bi-plus-circle me-1"></i> Lập Phiếu Quyết Toán
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- Filter Form -->
+                <form action="/settlements" method="GET" class="row g-3 mb-4 p-3 bg-light rounded border border-light-subtle">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted">Tìm kiếm theo Hộ Nông Dân</label>
+                        <select name="farmer_id" class="form-select shadow-sm">
+                            <option value="">-- Tất cả hộ nông dân --</option>
+                            <% farmers.forEach(f => { %>
+                                <option value="<%= f.id %>" <%= filters.farmer_id == f.id ? 'selected' : '' %>>
+                                    <%= f.full_name %> (<%= f.village %>, <%= f.commune %>)
+                                </option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2 shadow-sm"><i class="bi bi-search me-1"></i> Tra cứu</button>
+                        <a href="/settlements" class="btn btn-secondary shadow-sm"><i class="bi bi-x-circle me-1"></i> Hiển thị tất cả</a>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle border">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center">Mã Phiếu</th>
+                                <th>Hộ Nông Dân</th>
+                                <th>Nông Sản</th>
+                                <th class="text-end">Tiền Thu Mua (VNĐ)</th>
+                                <th class="text-end text-danger">Khấu Trừ Nợ (VNĐ)</th>
+                                <th class="text-end text-success">Thực Nhận (VNĐ)</th>
+                                <th class="text-center">Ngày Lập</th>
+                                <th class="text-end">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if(settlements.length === 0) { %>
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-5">
+                                        <i class="bi bi-clipboard-x fs-1 text-light"></i>
+                                        <p class="mt-2 mb-0">Chưa có dữ liệu quyết toán nào.</p>
+                                    </td>
+                                </tr>
+                            <% } else { %>
+                                <% settlements.forEach(set => { %>
+                                    <tr>
+                                        <td class="text-center fw-bold text-muted">QT-<%= String(set.id).padStart(4, '0') %></td>
+                                        <td class="fw-bold text-dark"><%= set.full_name %></td>
+                                        <td><span class="badge bg-secondary rounded-pill px-3"><%= set.product_type %></span></td>
+                                        <td class="text-end text-dark fw-semibold"><%= set.total_purchase_amount.toLocaleString() %></td>
+                                        <td class="text-end text-danger fw-semibold">-<%= set.total_debt_deducted.toLocaleString() %></td>
+                                        <td class="text-end text-success fw-bold fs-6"><%= set.final_payout.toLocaleString() %></td>
+                                        <td class="text-center"><%= new Date(set.settlement_date).toLocaleDateString('vi-VN') %></td>
+                                        <td class="text-end">
+                                            <a href="/print/settlement/<%= set.id %>" target="_blank" class="btn btn-sm btn-outline-success shadow-sm me-1" title="In Phiếu">
+                                                <i class="bi bi-printer"></i> In Phiếu
+                                            </a>
+                                            <% if (user.role === 'admin') { %>
+                                            <button class="btn btn-sm btn-outline-danger shadow-sm" data-bs-toggle="modal" data-bs-target="#deleteSettlementModal<%= set.id %>" title="Hủy Phiếu">
+                                                <i class="bi bi-x-octagon"></i> Hủy & Khôi Phục Nợ
+                                            </button>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                    <% if (user.role === 'admin') { %>
+                                    <!-- Delete/Rollback Modal -->
+                                    <div class="modal fade text-start" id="deleteSettlementModal<%= set.id %>" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content border-danger border-top border-4">
+                                                <div class="modal-header bg-light">
+                                                    <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Cảnh báo Hủy Phiếu Quyết Toán</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body py-4 text-center">
+                                                    <i class="bi bi-trash3 text-danger mb-3" style="font-size: 3rem;"></i>
+                                                    <p class="text-dark fs-5">Hủy phiếu quyết toán <strong>QT-<%= String(set.id).padStart(4, '0') %></strong>?</p>
+                                                    <div class="alert alert-warning text-start mx-3 mb-0 small">
+                                                        <i class="bi bi-arrow-counterclockwise me-1"></i> Việc hủy phiếu này sẽ <strong>khôi phục lại trạng thái "Chưa thanh toán"</strong> đối với toàn bộ các phiếu công nợ vật tư của hộ nông dân <strong><%= set.full_name %></strong> tại thời điểm lập phiếu.
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer bg-light border-top-0 justify-content-center">
+                                                    <form action="/settlements/delete/<%= set.id %>" method="POST" class="d-flex gap-2">
+                                                        <button type="button" class="btn btn-secondary px-4 shadow-sm" data-bs-dismiss="modal">Không hủy</button>
+                                                        <button type="submit" class="btn btn-danger shadow-sm px-4">Đồng ý Hủy</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <% } %>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Modal (Lập Quyết Toán) -->
+<div class="modal fade" id="addSettlementModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-primary border-top border-4">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold text-primary"><i class="bi bi-calculator me-2"></i>Lập Phiếu Quyết Toán</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/settlements/add" method="POST">
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Left col: Input -->
+                        <div class="col-md-7 border-end pe-4">
+                            <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2">Thông tin nhập kho</h6>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold">CHỌN NÔNG DÂN <span class="text-danger">*</span></label>
+                                <select name="farmer_id" id="calc_farmer_id" class="form-select border-start-0 ps-0 border-primary-subtle shadow-sm" style="border-left: 3px solid #0d6efd !important; padding-left: 10px !important;" required onchange="fetchFarmerDebt()">
+                                    <option value="">-- Chọn một hộ nông dân --</option>
+                                    <% farmers.forEach(f => { %>
+                                        <option value="<%= f.id %>"><%= f.full_name %> (<%= f.phone || 'Không SĐT' %>)</option>
+                                    <% }) %>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold">LOẠI NÔNG SẢN <span class="text-danger">*</span></label>
+                                <input type="text" name="product_type" class="form-control shadow-sm" required placeholder="Lúa, Ngô, Khoai...">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted small fw-bold">SẢN LƯỢNG KHO <span class="text-danger">*</span></label>
+                                    <div class="input-group shadow-sm">
+                                        <input type="number" step="0.01" name="quantity" id="calc_quantity" class="form-control" required placeholder="0.00" oninput="calculatePreview()">
+                                        <span class="input-group-text bg-light border-light-subtle">kg</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted small fw-bold">GIÁ THU MUA <span class="text-danger">*</span></label>
+                                    <div class="input-group shadow-sm">
+                                        <input type="number" step="0.01" name="unit_purchase_price" id="calc_price" class="form-control" required placeholder="0" oninput="calculatePreview()">
+                                        <span class="input-group-text bg-light border-light-subtle">VNĐ</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label text-muted small fw-bold">NGÀY QUYẾT TOÁN <span class="text-danger">*</span></label>
+                                <input type="date" name="settlement_date" class="form-control shadow-sm" required id="currentDateInput2">
+                            </div>
+                        </div>
+
+                        <!-- Right col: Preview Calculation -->
+                        <div class="col-md-5 ps-4 bg-light rounded-3 py-3">
+                            <h6 class="fw-bold mb-4 text-secondary text-center">Bảng Tạm Tính Cấn Trừ</h6>
+                            
+                            <div class="d-flex justify-content-between mb-3 border-bottom pb-2">
+                                <span class="text-muted small">Tiền Thu Tương Ứng:</span>
+                                <span class="fw-bold text-dark" id="preview_purchase">0 VNĐ</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between mb-3 border-bottom pb-2">
+                                <span class="text-muted small">Khấu Trừ Nợ Vật Tư:</span>
+                                <span class="fw-bold text-danger">- <span id="preview_debt">0</span> VNĐ</span>
+                            </div>
+
+                            <div class="p-3 bg-white rounded-3 shadow-sm border border-success-subtle mt-4">
+                                <span class="text-muted small d-block mb-1">Thực Nhận (Nông Dân Lĩnh):</span>
+                                <h3 class="mb-0 fw-bold text-success text-end" id="preview_final">0 VNĐ</h3>
+                            </div>
+                            
+                            <div id="alert_debt_excess" class="alert alert-danger mt-3 py-2 small d-none shadow-sm">
+                                <i class="bi bi-info-circle me-1"></i> Số tiền nợ lớn hơn số tiền thu mua! Nông dân cần đóng thêm tiền mặt.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top-0">
+                    <button type="button" class="btn btn-secondary shadow-sm" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary fw-bold shadow-sm" id="btnSubmitSettlement" disabled><i class="bi bi-check2-all me-1"></i> Lưu Quyết Toán</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('currentDateInput2').valueAsDate = new Date();
+
+    let currentDebt = 0;
+
+    async function fetchFarmerDebt() {
+        const farmerId = document.getElementById('calc_farmer_id').value;
+        const btnSubmit = document.getElementById('btnSubmitSettlement');
+        
+        if (!farmerId) {
+            currentDebt = 0;
+            btnSubmit.disabled = true;
+            updateUI();
+            return;
+        }
+
+        btnSubmit.disabled = false;
+        try {
+            const response = await fetch(`/settlements/api/debt/${farmerId}`);
+            const data = await response.json();
+            currentDebt = data.totalUnpaid || 0;
+            updateUI();
+        } catch (error) {
+            console.error('Error fetching debt:', error);
+            currentDebt = 0;
+            updateUI();
+        }
+    }
+
+    function calculatePreview() {
+        updateUI();
+    }
+
+    function updateUI() {
+        const qty = parseFloat(document.getElementById('calc_quantity').value) || 0;
+        const price = parseFloat(document.getElementById('calc_price').value) || 0;
+        
+        const totalPurchase = qty * price;
+        const finalPayout = totalPurchase - currentDebt;
+
+        document.getElementById('preview_purchase').innerText = totalPurchase.toLocaleString() + ' VNĐ';
+        document.getElementById('preview_debt').innerText = currentDebt.toLocaleString();
+        
+        const finalEl = document.getElementById('preview_final');
+        const excessiveAlert = document.getElementById('alert_debt_excess');
+        
+        if (finalPayout < 0) {
+            finalEl.innerText = finalPayout.toLocaleString() + ' VNĐ';
+            finalEl.className = 'mb-0 fw-bold text-danger text-end';
+            excessiveAlert.classList.remove('d-none');
+        } else {
+            finalEl.innerText = finalPayout.toLocaleString() + ' VNĐ';
+            finalEl.className = 'mb-0 fw-bold text-success text-end';
+            excessiveAlert.classList.add('d-none');
+        }
+    }
+</script>
+
+<%- include('../partials/footer') %>

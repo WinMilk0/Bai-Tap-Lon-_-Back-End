@@ -1,0 +1,310 @@
+<%- include('../partials/header') %>
+
+<div class="wrapper">
+    <!-- Sidebar -->
+    <nav id="sidebar">
+        <div class="sidebar-header d-flex align-items-center justify-content-center">
+            <h4 class="mb-0 fw-bold"><i class="bi bi-tree-fill me-2" style="color: #10b981;"></i>AgriContract</h4>
+        </div>
+        <ul class="list-unstyled components mt-3">
+            <p class="text-muted small text-uppercase mb-2 px-4 fw-bold">Quản lý tổng quan</p>
+            <li>
+                <a href="/"><i class="bi bi-speedometer2 me-3 fs-5"></i> Dashboard</a>
+            </li>
+            <p class="text-muted small text-uppercase mt-4 mb-2 px-4 fw-bold">Nghiệp vụ</p>
+            <li>
+                <a href="/farmers"><i class="bi bi-people me-3 fs-5"></i> Hộ nông dân</a>
+            </li>
+            <li class="active">
+                <a href="/advances"><i class="bi bi-box-seam me-3 fs-5"></i> Cấp phát vật tư</a>
+            </li>
+            <li>
+                <a href="/settlements"><i class="bi bi-calculator me-3 fs-5"></i> Quyết toán mùa vụ</a>
+            </li>
+            <p class="text-muted small text-uppercase mt-4 mb-2 px-4 fw-bold">Tài khoản</p>
+            <li>
+                <a href="/auth/logout" class="text-danger"><i class="bi bi-box-arrow-right me-3 fs-5"></i> Đăng xuất</a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Page Content -->
+    <div id="content" class="bg-light">
+        <nav class="navbar navbar-expand-lg navbar-custom mb-4">
+            <div class="container-fluid">
+                <span class="navbar-brand mb-0 h5 fw-bold text-dark">Quản lý Cấp Phát Vật Tư (Công Nợ)</span>
+                <div class="d-flex align-items-center ms-auto">
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="https://ui-avatars.com/api/?name=<%= user.full_name || user.username %>&background=10b981&color=fff&bold=true" alt="User" width="36" height="36" class="rounded-circle me-2 shadow-sm">
+                            <strong class="d-none d-md-block"><%= user.full_name || user.username %></strong>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="dropdownUser">
+                            <li><a class="dropdown-item text-danger py-2" href="/auth/logout"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <% if(success_msg && success_msg.length > 0) { %>
+            <div class="alert alert-success alert-dismissible fade show shadow-sm border-0">
+                <i class="bi bi-check-circle-fill me-2"></i> <%= success_msg %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <% } %>
+        <% if(error_msg && error_msg.length > 0) { %>
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> <%= error_msg %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <% } %>
+
+        <div class="card shadow-sm border-0 rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-card-checklist me-2 text-primary"></i>Danh sách Phiếu Công Nợ</h6>
+                <div>
+                    <% if (user.role === 'admin') { %>
+                        <a href="/export/advances" class="btn btn-success shadow-sm fw-bold me-2">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
+                        </a>
+                    <% } %>
+                    <button class="btn btn-warning text-dark fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#addAdvanceModal">
+                        <i class="bi bi-plus-circle me-1"></i> Tạo Phiếu Cấp Phát
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Filter Form -->
+                <form action="/advances" method="GET" class="row g-3 mb-4 p-3 bg-light rounded border border-light-subtle">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold text-muted">Hộ Nông Dân</label>
+                        <select name="farmer_id" class="form-select">
+                            <option value="">-- Tất cả --</option>
+                            <% farmers.forEach(f => { %>
+                                <option value="<%= f.id %>" <%= filters.farmer_id == f.id ? 'selected' : '' %>>
+                                    <%= f.full_name %> (<%= f.village %>, <%= f.commune %>)
+                                </option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold text-muted">Trạng Thái</label>
+                        <select name="status" class="form-select">
+                            <option value="">-- Tất cả --</option>
+                            <option value="Unpaid" <%= filters.status === 'Unpaid' ? 'selected' : '' %>>Chưa thanh toán</option>
+                            <option value="Settled" <%= filters.status === 'Settled' ? 'selected' : '' %>>Đã quyết toán</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2 shadow-sm"><i class="bi bi-search me-1"></i> Tra cứu</button>
+                        <a href="/advances" class="btn btn-secondary shadow-sm"><i class="bi bi-x-circle me-1"></i> Xóa lọc</a>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle border">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center">Mã Phiếu</th>
+                                <th>Hộ Nông Dân</th>
+                                <th>Vật Tư</th>
+                                <th class="text-end">Số Lượng</th>
+                                <th class="text-end">Đơn Giá</th>
+                                <th class="text-end">Tổng Nợ (VNĐ)</th>
+                                <th class="text-center">Ngày Lập</th>
+                                <th class="text-center">Trạng Thái</th>
+                                <th class="text-end">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if(advances.length === 0) { %>
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted py-5">
+                                        <i class="bi bi-journal-x fs-1 text-light"></i>
+                                        <p class="mt-2 mb-0">Chưa có dữ liệu phiếu công nợ phù hợp.</p>
+                                    </td>
+                                </tr>
+                            <% } else { %>
+                                <% advances.forEach(adv => { %>
+                                    <tr>
+                                        <td class="text-center fw-bold text-muted">ADV-<%= String(adv.id).padStart(4, '0') %></td>
+                                        <td class="fw-bold text-dark"><%= adv.full_name %></td>
+                                        <td>
+                                            <% if(adv.item_type === 'Seed') { %>
+                                                <span class="badge bg-success bg-opacity-75 rounded-pill px-3"><i class="bi bi-flower1 me-1"></i>Giống</span>
+                                            <% } else { %>
+                                                <span class="badge bg-warning text-dark rounded-pill px-3"><i class="bi bi-snow2 me-1"></i>Phân bón</span>
+                                            <% } %>
+                                        </td>
+                                        <td class="text-end fw-semibold"><%= adv.quantity %></td>
+                                        <td class="text-end"><%= adv.unit_price.toLocaleString() %></td>
+                                        <td class="text-end fw-bold text-danger"><%= adv.total_debt.toLocaleString() %></td>
+                                        <td class="text-center"><%= new Date(adv.debt_date).toLocaleDateString('vi-VN') %></td>
+                                        <td class="text-center">
+                                            <% if(adv.status === 'Settled') { %>
+                                                <span class="badge bg-success rounded-pill px-3"><i class="bi bi-check-circle me-1"></i>Đã Q.Toán</span>
+                                            <% } else { %>
+                                                <span class="badge bg-secondary rounded-pill px-3"><i class="bi bi-hourglass-split me-1"></i>Chưa T.Toán</span>
+                                            <% } %>
+                                        </td>
+                                        <td class="text-end">
+                                            <% if(adv.status === 'Unpaid') { %>
+                                                <% if (user.role === 'admin') { %>
+                                                <button class="btn btn-sm btn-outline-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#editAdvanceModal<%= adv.id %>" title="Chỉnh sửa">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger shadow-sm" data-bs-toggle="modal" data-bs-target="#deleteAdvanceModal<%= adv.id %>" title="Xóa">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                                <% } else { %>
+                                                    <span class="badge bg-light text-muted border"><i class="bi bi-lock-fill"></i> Chỉ xem</span>
+                                                <% } %>
+                                            <% } else { %>
+                                                <button class="btn btn-sm btn-outline-secondary disabled" title="Không thể sửa/xóa phiếu đã quyết toán"><i class="bi bi-lock-fill"></i></button>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+
+                                    <% if(adv.status === 'Unpaid' && user.role === 'admin') { %>
+                                        <!-- Edit Modal -->
+                                        <div class="modal fade text-start" id="editAdvanceModal<%= adv.id %>" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content border-primary border-top border-4">
+                                                    <div class="modal-header bg-light">
+                                                        <h5 class="modal-title fw-bold text-dark"><i class="bi bi-pencil-square text-primary me-2"></i>Chỉnh sửa Phiếu ADV-<%= String(adv.id).padStart(4, '0') %></h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <form action="/advances/edit/<%= adv.id %>" method="POST">
+                                                        <div class="modal-body">
+                                                            <div class="mb-3">
+                                                                <label class="form-label text-muted small fw-bold">LOẠI VẬT TƯ <span class="text-danger">*</span></label>
+                                                                <select name="item_type" class="form-select" required>
+                                                                    <option value="Seed" <%= adv.item_type === 'Seed' ? 'selected' : '' %>>Giống cây trồng</option>
+                                                                    <option value="Fertilizer" <%= adv.item_type === 'Fertilizer' ? 'selected' : '' %>>Phân bón/Thuốc</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="row">
+                                                                <div class="col-md-6 mb-3">
+                                                                    <label class="form-label text-muted small fw-bold">SỐ LƯỢNG <span class="text-danger">*</span></label>
+                                                                    <div class="input-group">
+                                                                        <input type="number" step="0.01" name="quantity" class="form-control" required value="<%= adv.quantity %>">
+                                                                        <span class="input-group-text bg-light">kg/bao</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-6 mb-3">
+                                                                    <label class="form-label text-muted small fw-bold">ĐƠN GIÁ <span class="text-danger">*</span></label>
+                                                                    <div class="input-group">
+                                                                        <input type="number" step="0.01" name="unit_price" class="form-control" required value="<%= adv.unit_price %>">
+                                                                        <span class="input-group-text bg-light">VNĐ</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label text-muted small fw-bold">NGÀY LẬP PHIẾU <span class="text-danger">*</span></label>
+                                                                <input type="date" name="debt_date" class="form-control" required value="<%= adv.debt_date %>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer bg-light border-top-0">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                                            <button type="submit" class="btn btn-primary shadow-sm"><i class="bi bi-save me-1"></i> Lưu thay đổi</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Delete Modal -->
+                                        <div class="modal fade text-start" id="deleteAdvanceModal<%= adv.id %>" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content border-danger border-top border-4">
+                                                    <div class="modal-header bg-light">
+                                                        <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Xác nhận xóa phiếu</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body py-4">
+                                                        <p class="text-dark">Bạn có chắc chắn muốn xóa phiếu công nợ <strong>ADV-<%= String(adv.id).padStart(4, '0') %></strong> của hộ <strong><%= adv.full_name %></strong> không?</p>
+                                                        <p class="text-danger fw-bold mb-0">Thao tác này không thể hoàn tác!</p>
+                                                    </div>
+                                                    <div class="modal-footer bg-light border-top-0 justify-content-center">
+                                                        <form action="/advances/delete/<%= adv.id %>" method="POST">
+                                                            <button type="button" class="btn btn-secondary text-dark px-4" data-bs-dismiss="modal">Hủy</button>
+                                                            <button type="submit" class="btn btn-danger shadow-sm px-4">Đồng ý Xóa</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <% } %>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal fade" id="addAdvanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-warning border-top border-4">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-plus-circle-fill text-warning me-2"></i>Tạo Phiếu Cấp Phát Vật Tư</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/advances/add" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">CHỌN NÔNG DÂN <span class="text-danger">*</span></label>
+                        <select name="farmer_id" class="form-select border-start-0 ps-0 border-warning-subtle" style="border-left: 3px solid #ffc107 !important; padding-left: 10px !important;" required>
+                            <option value="">-- Chọn một hộ nông dân --</option>
+                            <% farmers.forEach(f => { %>
+                                <option value="<%= f.id %>"><%= f.full_name %> (<%= f.phone || 'Không có SĐT' %> - <%= f.village %>)</option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">LOẠI VẬT TƯ <span class="text-danger">*</span></label>
+                        <select name="item_type" class="form-select" required>
+                            <option value="Seed">Giống cây trồng</option>
+                            <option value="Fertilizer">Phân bón (Hữu cơ/Hóa học)</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small fw-bold">SỐ LƯỢNG <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" step="0.01" name="quantity" class="form-control" required placeholder="0.00">
+                                <span class="input-group-text bg-light">kg/bao</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small fw-bold">ĐƠN GIÁ <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" step="0.01" name="unit_price" class="form-control" required placeholder="0">
+                                <span class="input-group-text bg-light">VNĐ</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">NGÀY LẬP PHIẾU <span class="text-danger">*</span></label>
+                        <input type="date" name="debt_date" class="form-control" required id="currentDateInput">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-warning fw-bold text-dark shadow-sm"><i class="bi bi-check2-circle me-1"></i> Ghi Nhận Nợ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Set default date to today for the add modal
+    document.getElementById('currentDateInput').valueAsDate = new Date();
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,290 @@
+<%- include('../partials/header') %>
+
+<div class="wrapper">
+    <!-- Sidebar -->
+    <nav id="sidebar">
+        <div class="sidebar-header d-flex align-items-center justify-content-center">
+            <h4 class="mb-0 fw-bold"><i class="bi bi-tree-fill me-2" style="color: #10b981;"></i>AgriContract</h4>
+        </div>
+        <ul class="list-unstyled components mt-3">
+            <p class="text-muted small text-uppercase mb-2 px-4 fw-bold">Quản lý tổng quan</p>
+            <li>
+                <a href="/"><i class="bi bi-speedometer2 me-3 fs-5"></i> Dashboard</a>
+            </li>
+            <p class="text-muted small text-uppercase mt-4 mb-2 px-4 fw-bold">Nghiệp vụ</p>
+            <li class="active">
+                <a href="/farmers"><i class="bi bi-people me-3 fs-5"></i> Hộ nông dân</a>
+            </li>
+            <li>
+                <a href="/advances"><i class="bi bi-box-seam me-3 fs-5"></i> Cấp phát vật tư</a>
+            </li>
+            <li>
+                <a href="/settlements"><i class="bi bi-calculator me-3 fs-5"></i> Quyết toán mùa vụ</a>
+            </li>
+            <p class="text-muted small text-uppercase mt-4 mb-2 px-4 fw-bold">Tài khoản</p>
+            <li>
+                <a href="/auth/logout" class="text-danger"><i class="bi bi-box-arrow-right me-3 fs-5"></i> Đăng xuất</a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Page Content -->
+    <div id="content" class="bg-light">
+        <nav class="navbar navbar-expand-lg navbar-custom mb-4">
+            <div class="container-fluid">
+                <span class="navbar-brand mb-0 h5 fw-bold text-dark">Quản lý Hộ Nông Dân</span>
+                <div class="d-flex align-items-center ms-auto">
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="https://ui-avatars.com/api/?name=<%= user.full_name || user.username %>&background=10b981&color=fff&bold=true" alt="User" width="36" height="36" class="rounded-circle me-2 shadow-sm">
+                            <strong class="d-none d-md-block"><%= user.full_name || user.username %></strong>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="dropdownUser">
+                            <li><a class="dropdown-item text-danger py-2" href="/auth/logout"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <% if(success_msg && success_msg.length > 0) { %>
+            <div class="alert alert-success alert-dismissible fade show shadow-sm border-0">
+                <i class="bi bi-check-circle-fill me-2"></i> <%= success_msg %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <% } %>
+        <% if(error_msg && error_msg.length > 0) { %>
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> <%= error_msg %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <% } %>
+
+        <div class="card shadow-sm border-0 rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-list-ul me-2 text-primary"></i>Danh sách Hộ Nông Dân</h6>
+                <div>
+                    <% if (user.role === 'admin') { %>
+                        <a href="/export/farmers" class="btn btn-success shadow-sm fw-bold me-2">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Xuất Excel
+                        </a>
+                    <% } %>
+                    <button class="btn btn-primary shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#addFarmerModal">
+                        <i class="bi bi-person-plus-fill me-1"></i> Thêm Nông Dân Mới
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Filter Form -->
+                <form action="/farmers" method="GET" class="row g-3 mb-4 p-3 bg-light rounded border border-light-subtle">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold text-muted">Lọc theo Xã</label>
+                        <input type="text" name="commune" class="form-control" placeholder="Nhập tên xã" value="<%= filters.commune || '' %>">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold text-muted">Lọc theo Thôn</label>
+                        <input type="text" name="village" class="form-control" placeholder="Nhập tên thôn" value="<%= filters.village || '' %>">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2 shadow-sm"><i class="bi bi-funnel me-1"></i> Lọc dữ liệu</button>
+                        <a href="/farmers" class="btn btn-secondary shadow-sm"><i class="bi bi-x-circle me-1"></i> Xóa lọc</a>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle border">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center" width="5%">ID</th>
+                                <th width="20%">Họ và Tên</th>
+                                <th width="15%">Điện thoại</th>
+                                <th width="20%">Địa chỉ</th>
+                                <th width="12%">Thôn</th>
+                                <th width="13%">Xã</th>
+                                <th class="text-end" width="15%">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if(farmers.length === 0) { %>
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-5">
+                                        <i class="bi bi-inbox fs-1 text-light"></i>
+                                        <p class="mt-2 mb-0">Chưa có dữ liệu hộ nông dân phù hợp.</p>
+                                    </td>
+                                </tr>
+                            <% } else { %>
+                                <% farmers.forEach(farmer => { %>
+                                    <tr>
+                                        <td class="text-center text-muted fw-bold">#<%= farmer.id %></td>
+                                        <td class="fw-bold text-dark"><i class="bi bi-person-badge text-secondary me-2"></i><%= farmer.full_name %></td>
+                                        <td><%= farmer.phone || '—' %></td>
+                                        <td><span class="text-truncate d-inline-block" style="max-width: 200px;"><%= farmer.address || '—' %></span></td>
+                                        <td><span class="badge bg-info text-dark rounded-pill px-3"><%= farmer.village %></span></td>
+                                        <td><span class="badge bg-primary bg-opacity-75 rounded-pill px-3"><%= farmer.commune %></span></td>
+                                        <td class="text-end">
+                                            <% if (user.role === 'admin') { %>
+                                            <button class="btn btn-sm btn-outline-primary shadow-sm me-1" data-bs-toggle="modal" data-bs-target="#editFarmerModal<%= farmer.id %>" title="Chỉnh sửa">
+                                                <i class="bi bi-pencil-square"></i> Sửa
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger shadow-sm" data-bs-toggle="modal" data-bs-target="#deleteFarmerModal<%= farmer.id %>" title="Xóa">
+                                                <i class="bi bi-trash"></i> Xóa
+                                            </button>
+                                            <% } else { %>
+                                                <span class="badge bg-light text-muted border"><i class="bi bi-lock-fill text-secondary"></i> Chỉ xem</span>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+
+                                    </div>
+                                    <% if (user.role === 'admin') { %>
+                                    <!-- Edit Modal -->
+                                    <div class="modal fade text-start" id="editFarmerModal<%= farmer.id %>" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content border-primary border-top border-4">
+                                                <div class="modal-header bg-light">
+                                                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-pencil-square text-primary me-2"></i>Chỉnh sửa thông tin</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <form action="/farmers/edit/<%= farmer.id %>" method="POST">
+                                                    <div class="modal-body">
+                                                        <div class="mb-3">
+                                                            <label class="form-label fw-bold text-muted small">HỌ VÀ TÊN <span class="text-danger">*</span></label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                                                                <input type="text" name="full_name" class="form-control" required value="<%= farmer.full_name %>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label class="form-label fw-bold text-muted small">SỐ ĐIỆN THOẠI <span class="text-danger">*</span></label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text bg-light"><i class="bi bi-telephone"></i></span>
+                                                                <input type="text" name="phone" class="form-control" required value="<%= farmer.phone %>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label class="form-label fw-bold text-muted small">ĐỊA CHỈ CHI TIẾT</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text bg-light"><i class="bi bi-house"></i></span>
+                                                                <input type="text" name="address" class="form-control" value="<%= farmer.address %>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-6 mb-3">
+                                                                <label class="form-label fw-bold text-muted small">THÔN <span class="text-danger">*</span></label>
+                                                                <div class="input-group">
+                                                                    <span class="input-group-text bg-light"><i class="bi bi-geo"></i></span>
+                                                                    <input type="text" name="village" class="form-control" required value="<%= farmer.village %>">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6 mb-3">
+                                                                <label class="form-label fw-bold text-muted small">XÃ <span class="text-danger">*</span></label>
+                                                                <div class="input-group">
+                                                                    <span class="input-group-text bg-light"><i class="bi bi-geo-alt"></i></span>
+                                                                    <input type="text" name="commune" class="form-control" required value="<%= farmer.commune %>">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer bg-light border-top-0">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                                        <button type="submit" class="btn btn-primary shadow-sm"><i class="bi bi-save me-1"></i> Lưu thay đổi</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Delete Modal -->
+                                    <div class="modal fade text-start" id="deleteFarmerModal<%= farmer.id %>" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content border-danger border-top border-4">
+                                                <div class="modal-header bg-light">
+                                                    <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Xác nhận xóa</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body text-center py-4">
+                                                    <i class="bi bi-x-circle text-danger" style="font-size: 4rem;"></i>
+                                                    <h5 class="mt-3">Xóa tài khoản nông dân?</h5>
+                                                    <p class="text-muted">Bạn có chắc chắn muốn xóa <strong><%= farmer.full_name %></strong> khỏi hệ thống?</p>
+                                                    <div class="alert alert-warning text-start mx-3 mb-0 small">
+                                                        Đồng thời sẽ <strong>xóa vĩnh viễn</strong> mọi lịch sử công nợ và quyết toán thu mua của nông dân này!
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer bg-light border-top-0 justify-content-center">
+                                                    <form action="/farmers/delete/<%= farmer.id %>" method="POST" class="d-flex gap-2">
+                                                        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Hủy</button>
+                                                        <button type="submit" class="btn btn-danger shadow-sm px-4">Xóa ngay</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <% } %>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal fade" id="addFarmerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-success border-top border-4">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold text-success"><i class="bi bi-person-plus-fill me-2"></i>Thêm Nông Dân Mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/farmers/add" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small">HỌ VÀ TÊN <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                            <input type="text" name="full_name" class="form-control border-start-0 ps-0" style="background: transparent;" required placeholder="Nhập đầy đủ họ tên">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small">SỐ ĐIỆN THOẠI <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-telephone"></i></span>
+                            <input type="text" name="phone" class="form-control" required placeholder="09xx...">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small">ĐỊA CHỈ CHI TIẾT</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-house"></i></span>
+                            <input type="text" name="address" class="form-control" placeholder="Số nhà, đường...">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold text-muted small">THÔN <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-geo"></i></span>
+                                <input type="text" name="village" class="form-control" required placeholder="Tên thôn">
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold text-muted small">XÃ <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-geo-alt"></i></span>
+                                <input type="text" name="commune" class="form-control" required placeholder="Tên xã">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-success shadow-sm"><i class="bi bi-plus-circle me-1"></i> Lưu thông tin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
